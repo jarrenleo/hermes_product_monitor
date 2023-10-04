@@ -67,7 +67,7 @@ class HermesProduct:
                     {"name": "SKU", "value": data["sku"], "inline": "true"},
                     {"name": "Price", "value": data["price"], "inline": "true"},
                 ],
-                "timestamp": datetime.datetime.now().isoformat(),
+                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
             }
         ]
 
