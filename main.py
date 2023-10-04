@@ -25,10 +25,17 @@ class HermesProduct:
                 f"https://www.hermes.com/{self.country}/{self.language}/category/women/bags-and-small-leather-goods/bags-and-clutches/#|"
             )
             if response.status_code != 200:
-                raise RuntimeError("Failed to get product content")
+                raise Exception("Failed to get response")
 
-            return BeautifulSoup(response.content, "lxml").find(class_="grid-container")
-        except RuntimeError as e:
+            soup = BeautifulSoup(response.text, "html.parser").find(
+                class_="grid-container"
+            )
+
+            if not soup:
+                raise Exception("Failed to get product content")
+
+            return soup
+        except Exception as e:
             print(e)
 
     def get_current_skus(self, product_content):
@@ -79,8 +86,8 @@ class HermesProduct:
                 headers={"Content-Type": "application/json"},
             )
             if response.status_code != 204:
-                raise RuntimeError("Failed to send discord webhook")
-        except RuntimeError as e:
+                raise Exception("Failed to send discord webhook")
+        except Exception as e:
             print(e)
 
     def update_skus(self):
@@ -88,21 +95,24 @@ class HermesProduct:
         self.current_skus.clear()
 
     def check_products(self):
-        product_content = self.get_product_content()
-        self.get_current_skus(product_content)
+        try:
+            product_content = self.get_product_content()
+            self.get_current_skus(product_content)
 
-        new_skus = self.current_skus - self.latest_skus
+            new_skus = self.current_skus - self.latest_skus
 
-        if not new_skus:
+            if not new_skus:
+                self.update_skus()
+                return
+
+            for new_sku in new_skus:
+                product_data = self.get_product_data(product_content, new_sku)
+                embed = self.create_embed(product_data)
+                self.send_embed(embed)
+
             self.update_skus()
-            return
-
-        for new_sku in new_skus:
-            product_data = self.get_product_data(product_content, new_sku)
-            embed = self.create_embed(product_data)
-            self.send_embed(embed)
-
-        self.update_skus()
+        except Exception as e:
+            print(e)
 
     def start_monitor(self):
         schedule.every(3).seconds.do(self.check_products)
