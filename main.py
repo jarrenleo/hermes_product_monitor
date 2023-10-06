@@ -22,7 +22,11 @@ class HermesProduct:
     def get_product_content(self):
         try:
             response = requests.get(
-                f"https://www.hermes.com/{self.country}/{self.language}/category/women/bags-and-small-leather-goods/bags-and-clutches/#|"
+                url=f"https://www.hermes.com/{self.country}/{self.language}/category/women/bags-and-small-leather-goods/bags-and-clutches/#|",
+                proxies={
+                    "http": os.environ.get("PROXY"),
+                },
+                timeout=3,
             )
             if response.status_code != 200:
                 raise Exception("Failed to get response")
